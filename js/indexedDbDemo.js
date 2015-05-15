@@ -187,14 +187,10 @@ app.idbDemo.abortTransaction = function() {
 			'lastName':'Malone'
 		});
 
-		transaction.abort();
-
-		transaction.onerror = function(event) {
-			alert('Error - ' + JSON.stringify(event));
-		};
+		//transaction.abort();
 
 		app.idbDemo.readVisitors(db, function(result) {
-			//app.idbDemo.showJsonResult(result, 'Aborted transaction, no changes should have been persisted');
+			app.idbDemo.showJsonResult(result, 'Aborted transaction, no changes should have been persisted');
 		});
 	});
 };
