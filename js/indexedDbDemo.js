@@ -187,7 +187,8 @@ app.idbDemo.abortTransaction = function() {
 			'lastName':'Malone'
 		});
 
-		//transaction.abort();
+		// abort transaction - currently seems to be unsupported in iOS 8
+		transaction.abort();
 
 		app.idbDemo.readVisitors(db, function(result) {
 			app.idbDemo.showJsonResult(result, 'Aborted transaction, no changes should have been persisted');
