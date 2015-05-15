@@ -189,8 +189,18 @@ app.idbDemo.abortTransaction = function() {
 
 		transaction.abort();
 
+		transaction.onerror = function(event) {
+			alert('Error');
+			app.getEl('idbTestResultExplanation').textContent = JSON.stringify(event);
+		};
+
+		transaction.onsuccess = function(event) {
+			alert('Success');
+			app.getEl('idbTestResultExplanation').textContent = JSON.stringify(event);
+		};
+
 		app.idbDemo.readVisitors(db, function(result) {
-			app.idbDemo.showJsonResult(result, 'Aborted transaction, no changes should have been persisted');
+			//app.idbDemo.showJsonResult(result, 'Aborted transaction, no changes should have been persisted');
 		});
 	});
 };
