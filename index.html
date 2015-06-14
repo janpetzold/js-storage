@@ -1,7 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<meta name="author" content="Jan Petzold" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 
 		<link rel="stylesheet" type="text/css" href="css/storage.css">
 	</head>
@@ -9,10 +11,16 @@
 	<body>
 		<h1>Client-side storage with JavaScript</h1>
 
+		<h2>Capabilities</h2>
+		<p>LocalStorage is <span id="localStorageAvailable"></span>. IndexedDB is <span id="indexedDbAvailable">not available</span>. ServiceWorker is <span id="serviceWorkerAvailable">not available</span>.</p>
+
 		<h2>Storage Limits</h2>
 
 		<button id="triggerMaxLocalStorage" type="button">Determine max. localStorage</button>
 		<p id="maxLocalStorageStatus"></p>
+
+		<button id="triggerMaxSessionStorage" type="button">Determine max. sessionStorage</button>
+		<p id="maxSessionStorageStatus"></p>
 
 		<button id="triggerStringify" type="button" disabled="disabled">Test Serialization (5MB)</button>
 		<p id="stringifyStatus"></p>
@@ -28,7 +36,7 @@
 
 		<button id="demoInitDb">1. Initialize DB</button>
 		<button id="demoFetch">2. Fetch a visitor</button>
-		<button id="demoIndex">3. Fetch by last name via index</button>
+		<button id="demoIndex">3. Fetch via index/iteration</button>
 		<button id="demoDelete">4. Delete a visitor</button>
 		<button id="demoUpdate">5. Update data for visitor</button>
 		<button id="demoTransaction">6. Modify in transaction</button>

@@ -7,14 +7,31 @@ app.idb = {};
 
 // init
 app.init = function() {
+	// check browsers capabilities for localStorage, IndexedDB and ServiceWorker
+	if (window.localStorage) {
+		app.getEl('localStorageAvailable').textContent = 'available';
+		app.getEl('localStorageAvailable').style.color = '#2CAE23';
+	}
+
+	if (window.indexedDB) {
+		app.getEl('indexedDbAvailable').textContent = 'available';
+		app.getEl('indexedDbAvailable').style.color = '#2CAE23';
+	}
+
+	if ('serviceWorker' in navigator) {
+		app.getEl('serviceWorkerAvailable').textContent = 'available';
+		app.getEl('serviceWorkerAvailable').style.color = '#2CAE23';
+	}
+
 	// fetch data to test storage limits and serialization/deserialization
 	app.get('data/40.json', function (data) {
 		app.testDataObject = data;
 		app.testDataString = JSON.stringify(data);
 
-		// reset localStorage and IndexedDB
-		window.localStorage.clear();
-		indexedDB.deleteDatabase("db");
+		// reset localStorage
+		if(window.localStorage) {
+			window.localStorage.clear();
+		}
 	});
 
 	app.get('data/20750.json', function (data) {
@@ -27,39 +44,55 @@ app.init = function() {
 	app.idb.getIndexedDbQuota();
 
 	// init event handlers
-	app.getEl('triggerStringify').addEventListener("click", function(e) {
-		app.ls.stringifyData(app.fiveMbData);
-	});
-
-	app.getEl('triggerParse').addEventListener("click", function(e) {
-		app.ls.parseData(JSON.stringify(app.fiveMbData));
-	});
-
-	app.getEl('triggerMaxLocalStorage').addEventListener("click", function(e) {
-		e.target.disabled = true;
-		app.ls.determineMaxLocalStorage(1);
-	});
-
-	app.getEl('triggerMaxIndexedDbStorage').addEventListener("click", function(e) {
-		e.target.disabled = true;
-		app.idb.initIndexedDb(function() {
-			app.idb.determineMaxIndexedDb(1);
+	if(document.addEventListener) {
+		app.getEl('triggerStringify').addEventListener('click', function (e) {
+			app.ls.stringifyData(app.fiveMbData);
 		});
-	});
+
+		app.getEl('triggerParse').addEventListener('click', function (e) {
+			app.ls.parseData(JSON.stringify(app.fiveMbData));
+		});
+
+		app.getEl('triggerMaxLocalStorage').addEventListener('click', function (e) {
+			e.target.disabled = true;
+			app.ls.determineMaxWebStorage('Local');
+		});
+
+		app.getEl('triggerMaxSessionStorage').addEventListener('click', function (e) {
+			e.target.disabled = true;
+			app.ls.determineMaxWebStorage('Session');
+		});
+
+		app.getEl('triggerMaxIndexedDbStorage').addEventListener('click', function (e) {
+			e.target.disabled = true;
+			app.idb.initIndexedDb(function () {
+				indexedDB.deleteDatabase('db');
+				app.idb.determineMaxIndexedDb();
+			});
+		});
+	}
 };
 
-app.ls.determineMaxLocalStorage = function(offset) {
+app.ls.determineMaxWebStorage = function(type, offset) {
+	if(!offset) {
+		offset = 1;
+	}
+
+	var bytes = app.getBytesFromObject(app.testDataString);
 	offset++;
 
 	try {
-		var bytes = app.getBytesFromObject(app.testDataString);
-		window.localStorage.setItem(offset, app.testDataString);
-		app.getEl('maxLocalStorageStatus').textContent = 'Stored ' + app.getKBytes(offset * bytes) + ' kB (approx. ' + app.getMBytes(offset * bytes) + ' MB) successfully';
-		app.ls.determineMaxLocalStorage(offset);
+		if(type === 'Local') {
+			window.localStorage.setItem(offset, app.testDataString);
+		} else {
+			window.sessionStorage.setItem(offset, app.testDataString);
+		}
+		app.getEl('max' + type + 'StorageStatus').textContent = 'Stored ' + app.getKBytes(offset * bytes) + ' kB (approx. ' + app.getMBytes(offset * bytes) + ' MB) successfully';
+		app.ls.determineMaxWebStorage(type, offset);
 	} catch (e) {
 		console.log(e);
-		app.getEl('maxLocalStorageStatus').textContent = app.getEl('maxLocalStorageStatus').textContent + ' - Exception: ' + e.message;
-		app.getEl('triggerMaxLocalStorage').disabled = false;
+		app.getEl('max' + type + 'StorageStatus').textContent = app.getEl('max' + type + 'StorageStatus').textContent + ' - Exception: ' + e.message;
+		app.getEl('triggerMax' + type + 'Storage').disabled = false;
 	}
 };
 
@@ -76,14 +109,14 @@ app.ls.parseData = function(data) {
 };
 
 app.idb.initIndexedDb = function(callback) {
-	var request = indexedDB.open("db", 1);
+	var request = indexedDB.open('db', 1);
 
 	request.onupgradeneeded = function(event) {
 		var db = event.target.result;
-		var store = db.createObjectStore("items", { keyPath: "id" });
+		var store = db.createObjectStore('items', { keyPath: 'id' });
 
 		store.transaction.oncomplete = function(event) {
-			var itemStore = db.transaction("items", "readwrite").objectStore("items");
+			var itemStore = db.transaction('items', 'readwrite').objectStore('items');
 			callback();
 		}
 	}
@@ -103,6 +136,10 @@ app.idb.getIndexedDbQuota = function() {
 };
 
 app.idb.determineMaxIndexedDb = function(offset) {
+	if(!offset) {
+		offset = 1;
+	}
+
 	offset++;
 	
 	var item = {
@@ -111,14 +148,13 @@ app.idb.determineMaxIndexedDb = function(offset) {
 	};
 
 	try{
-		indexedDB.open("db", 1).onsuccess = function(event) {
+		indexedDB.open('db', 1).onsuccess = function(event) {
 			var db = this.result;
-			var store = db.transaction("items", "readwrite").objectStore("items");
+			var store = db.transaction('items', 'readwrite').objectStore('items');
 
 			var request = store.add(item);
 
 			request.onsuccess = function(event) {
-				// event.target.result == customerData[i].ssn;
 				var bytes = app.getBytesFromObject(app.testDataString);
 				app.getEl('maxIndexedDbStorageStatus').textContent = 'Stored ' + app.getKBytes(offset * bytes) + ' kB (approx. ' + app.getMBytes(offset * bytes) + ' MB) successfully';
 				app.idb.determineMaxIndexedDb(offset);

@@ -6,12 +6,13 @@ app.idbDemo.init = function() {
 		app.idbDemo.visitors = JSON.parse(data);
 		console.log(app.idbDemo.visitors);
 
-		// delete if DB existed already to start from scratch
-		indexedDB.deleteDatabase('enterJs');
-
 		// init event listeners
 		app.getEl('demoInitDb').addEventListener('click', function(e) {
-			app.idbDemo.setupEnterJsDb();
+			// delete if DB existed already to start from scratch
+			var deleteEnterJsDb = window.indexedDB.deleteDatabase('enterJs');
+			deleteEnterJsDb.onsuccess = function(event) {
+				app.idbDemo.setupEnterJsDb();
+			};
 		});
 
 		app.getEl('demoFetch').addEventListener('click', function(e) {
@@ -128,6 +129,7 @@ app.idbDemo.fetchVisitor = function() {
 
 /**
  * Step 3 - use index for retrieval
+ * Beware: Index only finds first occurence!
  */
 app.idbDemo.fetchVisitorWithIndex = function() {
 	app.idbDemo.getDb(function(db) {
@@ -136,6 +138,21 @@ app.idbDemo.fetchVisitorWithIndex = function() {
 		var bench = new Date().getTime();
 		index.get('Kiesewetter').onsuccess = function(event) {
 			app.idbDemo.showJsonResult(event.target.result, 'Found Mr. Kiesewetter via index in ' + (new Date().getTime() - bench) + 'ms');
+		};
+
+		var visitors = app.idbDemo.roStore(db);
+
+		bench = new Date().getTime();
+		visitors.openCursor().onsuccess = function(event) {
+			var cursor = event.target.result;
+			if (cursor) {
+				if(cursor.value.lastName === 'Kiesewetter') {
+					console.log(cursor.value);
+					app.getEl('idbTestResultExplanation').textContent = app.getEl('idbTestResultExplanation').textContent + ', via iteration in ' + (new Date().getTime() - bench) + 'ms';
+				} else {
+					cursor.continue();
+				}
+			}
 		};
 	});
 };
@@ -175,12 +192,16 @@ app.idbDemo.updateVisitor = function() {
 	});
 };
 
+/**
+ * Step 6 - modify data in transaction
+ */
 app.idbDemo.abortTransaction = function() {
 	app.idbDemo.getDb(function(db) {
 		var transaction = db.transaction('visitors', 'readwrite');
 		var store = transaction.objectStore('visitors');
 
 		store.delete(1);
+
 		store.add({
 			'id':999,
 			'firstName':'Karl',
@@ -196,4 +217,6 @@ app.idbDemo.abortTransaction = function() {
 	});
 };
 
-app.idbDemo.init();
+if(window.indexedDB) {
+	app.idbDemo.init();
+}

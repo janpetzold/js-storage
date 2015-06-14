@@ -1,3 +1,15 @@
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #333;
+}
+
 textarea {
     width: 100%;
+}
+
+#localStorageAvailable, #indexedDbAvailable, #serviceWorkerAvailable {
+    color: #ae191d;
+    font-weight: bold;
 }
