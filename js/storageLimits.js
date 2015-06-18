@@ -65,10 +65,12 @@ app.init = function() {
 
 		app.getEl('triggerMaxIndexedDbStorage').addEventListener('click', function (e) {
 			e.target.disabled = true;
-			app.idb.initIndexedDb(function () {
-				indexedDB.deleteDatabase('db');
-				app.idb.determineMaxIndexedDb();
-			});
+
+			indexedDB.deleteDatabase('db').onsuccess = function() {
+				app.idb.initIndexedDb(function () {
+					app.idb.determineMaxIndexedDb();
+				});
+			};
 		});
 	}
 };
